@@ -41,7 +41,8 @@ public class AuthServiceImpl implements AuthService {
         }
 
         String token = jwtService.generateToken(user.getEmail(), user.getRole().toString());
-
+        logger.info("User {} successfully logged in", user.getEmail());
+        logger.info("token: {}", token);
         return new JwtAuthenticationResponse(token);
     }
 
@@ -66,9 +67,9 @@ public class AuthServiceImpl implements AuthService {
 
         User user = userMapper.toEntity(signUpRequest);
         User savedUser = userRepository.save(user);
-        logger.info("Saved user {}", savedUser);
-        String token = jwtService.generateToken(user.getEmail(), user.getRole().toString());
-
+        String token = jwtService.generateToken(savedUser.getEmail(), savedUser.getRole().toString());
+        logger.info("User {} successfully registered", user.getEmail());
+        logger.info("token: {}", token);
         return new JwtAuthenticationResponse(token);
     }
 }
