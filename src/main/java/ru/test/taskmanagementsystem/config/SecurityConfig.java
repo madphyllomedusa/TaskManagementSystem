@@ -3,6 +3,7 @@ package ru.test.taskmanagementsystem.config;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -26,7 +27,13 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/tasks/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/tasks").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/tasks/{id}").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/tasks/{id}").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/tasks/{id}/status").hasAnyRole("ADMIN", "USER")
+                        .requestMatchers(HttpMethod.PUT, "/tasks/{id}/priority").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/tasks/{id}/assignee").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/tasks/{id}/comments").hasAnyRole("ADMIN", "USER")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

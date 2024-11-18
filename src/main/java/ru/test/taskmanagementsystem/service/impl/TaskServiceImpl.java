@@ -16,7 +16,6 @@ import ru.test.taskmanagementsystem.model.entity.Comment;
 import ru.test.taskmanagementsystem.model.entity.Task;
 import ru.test.taskmanagementsystem.model.entity.User;
 import ru.test.taskmanagementsystem.model.enums.Priority;
-import ru.test.taskmanagementsystem.model.enums.Role;
 import ru.test.taskmanagementsystem.model.enums.Status;
 import ru.test.taskmanagementsystem.model.mapper.TaskMapper;
 import ru.test.taskmanagementsystem.repository.CommentRepository;
@@ -39,14 +38,8 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional
     public TaskDto addTask(TaskDto taskDto) {
-        logger.info("Trying to add new task: {}", taskDto.getTitle());
-
         UserDto currentUser = userService.getCurrentUser();
-        if (!isCurrentUserAdmin()) {
-            logger.error("{} don't have permission to add a new task", currentUser.getUsername());
-            throw new BadRequestException("У вас нет доступа для добавления задачи");
-        }
-
+        logger.info("Trying to add new task: {} by {}", taskDto.getTitle(), currentUser.getUsername());
         Task task = taskMapper.toEntity(taskDto);
 
         User author = userRepository.findById(currentUser.getId())
@@ -64,9 +57,6 @@ public class TaskServiceImpl implements TaskService {
     public TaskDto updateTask(TaskDto taskDto) {
         logger.info("Trying to update task with id: {}", taskDto.getId());
 
-        if (!isCurrentUserAdmin()) {
-            throw new ForbiddenException("У вас нет доступа для редактирования этой задачи");
-        }
 
         Task task = taskRepository.findById(taskDto.getId())
                 .orElseThrow(() -> new NotFoundException("Задача с id не найдена: " + taskDto.getId()));
@@ -114,11 +104,6 @@ public class TaskServiceImpl implements TaskService {
     public void deleteTaskById(Long id) {
         logger.info("Trying to delete task by id: {}", id);
 
-        if (!isCurrentUserAdmin()) {
-            throw new ForbiddenException("У вас нет доступа для удаления этой задачи");
-        }
-
-        logger.info("Trying to delete task by id: {}", id);
         if (id == null || id < 1) {
             logger.error("Wrong id {}", id);
             throw new BadRequestException("Wrong id " + id);
@@ -135,10 +120,13 @@ public class TaskServiceImpl implements TaskService {
             logger.error("Wrong id {}", id);
             throw new BadRequestException("Wrong id " + id);
         }
+
         Task task = taskMapper.toEntity(getTaskById(id));
+
         if (!mayManageTask(task)) {
             throw new ForbiddenException("У вас нет доступа для изменения статуса этой задачи");
         }
+
         logger.info("Task status successfully changed from {} to {}", task.getStatus(), status);
         task.setStatus(status);
         return taskMapper.toDto(taskRepository.save(task));
@@ -149,16 +137,15 @@ public class TaskServiceImpl implements TaskService {
     public TaskDto changePriority(Long id, Priority priority) {
         logger.info("Trying to change priority by id: {}", id);
 
-        if (!isCurrentUserAdmin()) {
-            throw new ForbiddenException("У вас нет доступа для удаления этой задачи");
-        }
-
         if (id == null || id < 1) {
             logger.error("Wrong id {}", id);
             throw new BadRequestException("Wrong id " + id);
         }
+
         Task task = taskMapper.toEntity(getTaskById(id));
+
         logger.info("Task priority successfully changed from {} to {}", task.getPriority(), priority);
+
         task.setPriority(priority);
         return taskMapper.toDto(taskRepository.save(task));
     }
@@ -168,15 +155,14 @@ public class TaskServiceImpl implements TaskService {
     public TaskDto assignTask(Long taskId, Long assigneeId) {
         logger.info("Trying to assign task by id {} to assignee {}", taskId, assigneeId);
 
-        if (!isCurrentUserAdmin()) {
-            throw new ForbiddenException("У вас нет доступа для удаления этой задачи");
-        }
         User user = userRepository.findById(assigneeId)
                 .orElseThrow(() -> new NotFoundException("Wrong id " + assigneeId));
+
         if (taskId == null || taskId < 1) {
             logger.error("Wrong id {}", taskId);
             throw new BadRequestException("Wrong id " + taskId);
         }
+
         Task task = taskMapper.toEntity(getTaskById(taskId));
 
         logger.info("Task assign successfully changed from {} to {}", task.getAssignee().getUsername(),
@@ -195,8 +181,7 @@ public class TaskServiceImpl implements TaskService {
                 .orElseThrow(() -> new NotFoundException("Задача с id не найдена: " + taskId));
 
         UserDto currentUser = userService.getCurrentUser();
-        if (!isCurrentUserAdmin() &&
-                !task.getAuthor().getId().equals(currentUser.getId()) &&
+        if (!task.getAuthor().getId().equals(currentUser.getId()) &&
                 (task.getAssignee() == null || !task.getAssignee().getId().equals(currentUser.getId()))) {
             throw new ForbiddenException("У вас нет прав на добавление комментария к этой задаче");
         }
@@ -216,13 +201,6 @@ public class TaskServiceImpl implements TaskService {
 
     private boolean mayManageTask(Task task) {
         UserDto currentUser = userService.getCurrentUser();
-        return isCurrentUserAdmin() ||
-                (task.getAssignee() != null && task.getAssignee().getId().equals(currentUser.getId()));
-
-    }
-
-    private boolean isCurrentUserAdmin() {
-        UserDto currentUser = userService.getCurrentUser();
-        return currentUser.getRole().equals(Role.ROLE_ADMIN);
+        return task.getAssignee() != null && task.getAssignee().getId().equals(currentUser.getId());
     }
 }
