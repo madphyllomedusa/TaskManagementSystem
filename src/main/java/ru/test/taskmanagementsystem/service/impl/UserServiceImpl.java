@@ -24,11 +24,6 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
 
     @Override
-    public boolean isAdmin(UserDto userDto) {
-        return userDto.getRole() == Role.ROLE_ADMIN;
-    }
-
-    @Override
     public UserDto getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
