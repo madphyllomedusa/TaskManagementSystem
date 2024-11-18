@@ -7,6 +7,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import ru.test.taskmanagementsystem.expectionhandler.BadRequestException;
 import ru.test.taskmanagementsystem.model.dto.UserDto;
 import ru.test.taskmanagementsystem.model.entity.User;
 import ru.test.taskmanagementsystem.model.enums.Role;
@@ -32,7 +33,7 @@ public class UserServiceImpl implements UserService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
             logger.error("Authentication is null");
-            throw new RuntimeException("Authentication is null");
+            throw new BadRequestException("Authentication is null");
         }
         String email = authentication.getPrincipal().toString();
         User user = userRepository.findByEmail(email)
@@ -40,10 +41,4 @@ public class UserServiceImpl implements UserService {
         return userMapper.toDto(user);
     }
 
-    @Override
-    public String getUsernameById(Long id) {
-        return userRepository.findById(id)
-                .map(User::getUsername)
-                .orElseThrow(()-> new UsernameNotFoundException("Пользователь не найден"));
-    }
 }

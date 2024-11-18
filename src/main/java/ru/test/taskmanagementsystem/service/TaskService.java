@@ -9,12 +9,10 @@ public interface TaskService {
     TaskDto addTask(TaskDto taskDto);
     TaskDto updateTask(TaskDto taskDto);
     TaskDto getTaskById(Long id);
-
     void deleteTaskById(Long id);
-
     TaskDto changeStatus(Long id, Status status);
     TaskDto changePriority(Long id, Priority priority);
     TaskDto assignTask(Long taskId, Long assigneeId);
-    CommentDto addComment(Long taskId, CommentDto commentDto);
+    CommentDto addComment(Long taskId, String commentText);
 
 }
