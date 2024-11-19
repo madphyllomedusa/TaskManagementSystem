@@ -4,6 +4,10 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import ru.test.taskmanagementsystem.expectionhandler.BadRequestException;
@@ -23,6 +27,7 @@ import ru.test.taskmanagementsystem.repository.TaskRepository;
 import ru.test.taskmanagementsystem.repository.UserRepository;
 import ru.test.taskmanagementsystem.service.TaskService;
 import ru.test.taskmanagementsystem.service.UserService;
+import ru.test.taskmanagementsystem.specification.TaskSpecification;
 
 @Service
 @RequiredArgsConstructor
@@ -47,7 +52,7 @@ public class TaskServiceImpl implements TaskService {
         task.setAuthor(author);
 
         Task savedTask = taskRepository.save(task);
-        logger.info("Задача сохранена: {}", savedTask);
+        logger.info("Task saved {}", taskDto.getTitle());
 
         return taskMapper.toDto(savedTask);
     }
@@ -196,6 +201,21 @@ public class TaskServiceImpl implements TaskService {
         logger.info("Comment added successfully: {}", savedComment);
 
         return taskMapper.toCommentDto(savedComment);
+    }
+
+    @Override
+    public Page<TaskDto> filterTasks(String author, String assignee,
+                                     Priority priority, Status status,
+                                     int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Specification<Task> specification = Specification.where(
+                TaskSpecification.hasAuthor(author))
+                .and(TaskSpecification.hasAssignee(assignee))
+                .and(TaskSpecification.hasPriority(priority))
+                .and(TaskSpecification.hasStatus(status));
+
+        Page<Task> tasks = taskRepository.findAll(specification, pageable);
+        return tasks.map(taskMapper::toDto);
     }
 
 

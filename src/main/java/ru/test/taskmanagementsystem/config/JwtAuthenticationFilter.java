@@ -1,5 +1,6 @@
 package ru.test.taskmanagementsystem.config;
 
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,20 +27,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain)
             throws ServletException, IOException {
-        String token = extractToken(request);
-        if (token != null && jwtService.validateToken(token)) {
-            String email = jwtService.extractEmail(token);
-            String role = jwtService.extractRole(token);
+        try {
 
-            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                    email,
-                    null,
-                    Collections.singleton(new SimpleGrantedAuthority(role))
-            );
-            authentication.setDetails(new WebAuthenticationDetails(request));
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            String token = extractToken(request);
+            if (token != null && jwtService.validateToken(token)) {
+                String email = jwtService.extractEmail(token);
+                String role = jwtService.extractRole(token);
+
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                        email,
+                        null,
+                        Collections.singleton(new SimpleGrantedAuthority(role))
+                );
+                authentication.setDetails(new WebAuthenticationDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            }
+        }catch (JwtException e) {
+            logger.error("Jwt error: " + e.getMessage());
+        }finally {
+            filterChain.doFilter(request, response);
         }
-        filterChain.doFilter(request, response);
     }
 
     private String extractToken(HttpServletRequest request) {

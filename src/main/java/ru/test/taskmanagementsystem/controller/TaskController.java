@@ -1,6 +1,7 @@
 package ru.test.taskmanagementsystem.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -71,6 +72,18 @@ public class TaskController {
     public ResponseEntity<CommentDto> addComment(@PathVariable Long id, @RequestBody String commentText) {
         CommentDto newComment = taskService.addComment(id, commentText);
         return ResponseEntity.status(HttpStatus.CREATED).body(newComment);
+    }
+
+    @GetMapping
+    public ResponseEntity<Page<TaskDto>> filterTasks(
+            @RequestParam(required = false) String authorUsername,
+            @RequestParam(required = false) String assigneeUsername,
+            @RequestParam(required = false) Priority priority,
+            @RequestParam(required = false) Status status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<TaskDto> tasks = taskService.filterTasks(authorUsername,assigneeUsername,priority,status,page,size);
+        return ResponseEntity.ok(tasks);
     }
 
 }
