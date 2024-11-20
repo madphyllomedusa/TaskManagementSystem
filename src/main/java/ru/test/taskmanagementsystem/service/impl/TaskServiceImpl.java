@@ -77,8 +77,8 @@ public class TaskServiceImpl implements TaskService {
             task.setStatus(taskDto.getStatus());
         }
         if (taskDto.getAuthorUsername() != null) {
-            User author = userRepository.findByUsername(taskDto.getAuthorUsername())
-                    .orElseThrow(() -> new NotFoundException("Исполнитель с username " + taskDto.getAssigneeUsername() + " не найден"));
+            userMapper.toEntity(userService.getUserByUsername(taskDto.getAuthorUsername()));
+            User author = userMapper.toEntity(userService.getUserByUsername(taskDto.getAuthorUsername()));
             task.setAssignee(author);
         }
         if (taskDto.getAssigneeUsername() != null) {
