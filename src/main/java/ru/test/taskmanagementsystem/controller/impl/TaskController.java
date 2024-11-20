@@ -29,7 +29,6 @@ public class TaskController implements TaskControllerApi {
     @Override
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<TaskDto> updateTask(Long id, TaskDto taskDto) {
-        taskDto.setId(id);
         TaskDto updatedTask = taskService.updateTask(id, taskDto);
         return ResponseEntity.ok(updatedTask);
     }
