@@ -8,7 +8,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import ru.test.taskmanagementsystem.expectionhandler.BadRequestException;
 import ru.test.taskmanagementsystem.expectionhandler.ForbiddenException;
@@ -22,9 +21,9 @@ import ru.test.taskmanagementsystem.model.entity.User;
 import ru.test.taskmanagementsystem.model.enums.Priority;
 import ru.test.taskmanagementsystem.model.enums.Status;
 import ru.test.taskmanagementsystem.model.mapper.TaskMapper;
+import ru.test.taskmanagementsystem.model.mapper.UserMapper;
 import ru.test.taskmanagementsystem.repository.CommentRepository;
 import ru.test.taskmanagementsystem.repository.TaskRepository;
-import ru.test.taskmanagementsystem.repository.UserRepository;
 import ru.test.taskmanagementsystem.service.TaskService;
 import ru.test.taskmanagementsystem.service.UserService;
 import ru.test.taskmanagementsystem.specification.TaskSpecification;
@@ -32,13 +31,13 @@ import ru.test.taskmanagementsystem.specification.TaskSpecification;
 @Service
 @RequiredArgsConstructor
 public class TaskServiceImpl implements TaskService {
-    private final static Logger logger = LoggerFactory.getLogger(TaskServiceImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(TaskServiceImpl.class);
 
     private final TaskRepository taskRepository;
     private final TaskMapper taskMapper;
     private final UserService userService;
-    private final UserRepository userRepository;
     private final CommentRepository commentRepository;
+    private final UserMapper userMapper;
 
     @Override
     @Transactional
@@ -47,8 +46,7 @@ public class TaskServiceImpl implements TaskService {
         logger.info("Trying to add new task: {} by {}", taskDto.getTitle(), currentUser.getUsername());
         Task task = taskMapper.toEntity(taskDto);
 
-        User author = userRepository.findById(currentUser.getId())
-                .orElseThrow(() -> new UsernameNotFoundException("Пользователь с id не найден " + currentUser.getId()));
+        User author = userMapper.toEntity(userService.getUserById(currentUser.getId()));
         task.setAuthor(author);
 
         Task savedTask = taskRepository.save(task);
@@ -59,11 +57,10 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     @Transactional
-    public TaskDto updateTask(TaskDto taskDto) {
+    public TaskDto updateTask(Long id, TaskDto taskDto) {
         logger.info("Trying to update task with id: {}", taskDto.getId());
-
-
-        Task task = taskRepository.findById(taskDto.getId())
+        validateId(id);
+        Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Задача с id не найдена: " + taskDto.getId()));
 
 
@@ -85,8 +82,8 @@ public class TaskServiceImpl implements TaskService {
             task.setAssignee(author);
         }
         if (taskDto.getAssigneeUsername() != null) {
-            User assignee = userRepository.findByUsername(taskDto.getAssigneeUsername())
-                    .orElseThrow(() -> new NotFoundException("Исполнитель с username " + taskDto.getAssigneeUsername() + " не найден"));
+            User assignee = userMapper.toEntity(userService
+                    .getUserByUsername(taskDto.getAssigneeUsername()));
             task.setAssignee(assignee);
         }
 
@@ -100,10 +97,7 @@ public class TaskServiceImpl implements TaskService {
     @Override
     public TaskDto getTaskById(Long id) {
         logger.info("Trying to get task by id: {}", id);
-        if (id == null || id < 1) {
-            logger.error("Wrong id {}", id);
-            throw new BadRequestException("Wrong id " + id);
-        }
+        validateId(id);
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Wrong id " + id));
 
@@ -113,11 +107,7 @@ public class TaskServiceImpl implements TaskService {
     @Override
     public void deleteTaskById(Long id) {
         logger.info("Trying to delete task by id: {}", id);
-
-        if (id == null || id < 1) {
-            logger.error("Wrong id {}", id);
-            throw new BadRequestException("Wrong id " + id);
-        }
+        validateId(id);
         logger.info("Task with id {} successfully deleted", id);
         taskRepository.deleteById(id);
     }
@@ -126,10 +116,7 @@ public class TaskServiceImpl implements TaskService {
     @Transactional
     public TaskDto changeStatus(Long id, Status status) {
         logger.info("Trying to change status by id: {}", id);
-        if (id == null || id < 1) {
-            logger.error("Wrong id {}", id);
-            throw new BadRequestException("Wrong id " + id);
-        }
+        validateId(id);
 
         Task task = taskMapper.toEntity(getTaskById(id));
 
@@ -146,11 +133,7 @@ public class TaskServiceImpl implements TaskService {
     @Transactional
     public TaskDto changePriority(Long id, Priority priority) {
         logger.info("Trying to change priority by id: {}", id);
-
-        if (id == null || id < 1) {
-            logger.error("Wrong id {}", id);
-            throw new BadRequestException("Wrong id " + id);
-        }
+        validateId(id);
 
         Task task = taskMapper.toEntity(getTaskById(id));
 
@@ -165,14 +148,9 @@ public class TaskServiceImpl implements TaskService {
     public TaskDto assignTask(Long taskId, Long assigneeId) {
         logger.info("Trying to assign task by id {} to assignee {}", taskId, assigneeId);
 
-        User user = userRepository.findById(assigneeId)
-                .orElseThrow(() -> new NotFoundException("Wrong id " + assigneeId));
+        User user = userMapper.toEntity(userService.getUserById(assigneeId));
 
-        if (taskId == null || taskId < 1) {
-            logger.error("Wrong id {}", taskId);
-            throw new BadRequestException("Wrong id " + taskId);
-        }
-
+        validateId(taskId);
         Task task = taskMapper.toEntity(getTaskById(taskId));
 
         logger.info("Task assign successfully changed from {} to {}", task.getAssignee().getUsername(),
@@ -186,7 +164,7 @@ public class TaskServiceImpl implements TaskService {
     @Transactional
     public CommentDto addComment(Long taskId, String commentText) {
         logger.info("Adding comment to task with id: {}", taskId);
-
+        validateId(taskId);
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new NotFoundException("Задача с id не найдена: " + taskId));
 
@@ -199,9 +177,7 @@ public class TaskServiceImpl implements TaskService {
         Comment comment = new Comment();
         comment.setTask(task);
         comment.setText(commentText);
-        comment.setUser(userRepository.findById(currentUser.getId())
-                .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден")));
-
+        comment.setUser(userMapper.toEntity(userService.getUserById(currentUser.getId())));
         Comment savedComment = commentRepository.save(comment);
         logger.info("Comment added successfully: {}", savedComment);
 
@@ -214,7 +190,7 @@ public class TaskServiceImpl implements TaskService {
                                      int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Specification<Task> specification = Specification.where(
-                TaskSpecification.hasAuthor(author))
+                        TaskSpecification.hasAuthor(author))
                 .and(TaskSpecification.hasAssignee(assignee))
                 .and(TaskSpecification.hasPriority(priority))
                 .and(TaskSpecification.hasStatus(status));
@@ -226,6 +202,14 @@ public class TaskServiceImpl implements TaskService {
 
     private boolean mayManageTask(Task task) {
         UserDto currentUser = userService.getCurrentUser();
-        return task.getAssignee() != null && task.getAssignee().getId().equals(currentUser.getId());
+        return task.getAssignee() != null
+                && task.getAssignee().getId().equals(currentUser.getId());
+    }
+
+    private void validateId(Long id) {
+        if (id == null || id < 1) {
+            logger.error("Wrong id {}", id);
+            throw new BadRequestException("Неверный id " + id);
+        }
     }
 }

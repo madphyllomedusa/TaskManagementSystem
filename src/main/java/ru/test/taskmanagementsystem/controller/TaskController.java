@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.ErrorResponse;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -43,6 +44,7 @@ public class TaskController {
 
     })
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<TaskDto> addTask(@RequestBody TaskDto taskDto) {
         TaskDto createdTask = taskService.addTask(taskDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdTask);
@@ -62,6 +64,7 @@ public class TaskController {
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
     })
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<TaskDto> updateTask(
             @PathVariable @Parameter(description = "ID задачи") Long id,
             @RequestBody TaskDto taskDto) {
@@ -82,6 +85,7 @@ public class TaskController {
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
     })
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<TaskDto> getTaskById(
             @PathVariable @Parameter(description = "ID задачи") Long id) {
         TaskDto taskDto = taskService.getTaskById(id);
@@ -99,6 +103,7 @@ public class TaskController {
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
     })
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteTask(
             @PathVariable @Parameter(description = "ID задачи") Long id) {
         taskService.deleteTaskById(id);
@@ -116,6 +121,7 @@ public class TaskController {
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PutMapping("/{id}/status")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<TaskDto> updateTaskStatus(
             @PathVariable @Parameter(description = "ID задачи") Long id,
             @RequestParam @Parameter(description = "Новый статус задачи") Status status) {
@@ -133,6 +139,7 @@ public class TaskController {
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PutMapping("/{id}/priority")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<TaskDto> updateTaskPriority(
             @PathVariable @Parameter(description = "ID задачи") Long id,
             @RequestParam @Parameter(description = "Новый приоритет задачи") Priority priority) {
@@ -152,6 +159,7 @@ public class TaskController {
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PutMapping("/{id}/assignee")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<TaskDto> updateAssignTask(
             @PathVariable @Parameter(description = "ID задачи") Long id,
             @RequestParam @Parameter(description = "ID исполнителя задачи") Long assigneeId) {
@@ -179,6 +187,7 @@ public class TaskController {
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PostMapping("/{id}/comments")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<CommentDto> addComment(
             @PathVariable @Parameter(description = "ID задачи") Long id,
             @RequestBody @Parameter(description = "Текст комментария") String commentText) {
@@ -196,6 +205,7 @@ public class TaskController {
                     content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Page<TaskDto>> filterTasks(
             @RequestParam(required = false) @Parameter(description = "Автор задачи") String authorUsername,
             @RequestParam(required = false) @Parameter(description = "Исполнитель задачи") String assigneeUsername,

@@ -28,8 +28,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain)
             throws ServletException, IOException {
         try {
-
-
             String token = extractToken(request);
             if (token != null && jwtService.validateToken(token)) {
                 String email = jwtService.extractEmail(token);
@@ -43,18 +41,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 authentication.setDetails(new WebAuthenticationDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
-        }catch (JwtException e) {
+        } catch (JwtException e) {
             logger.error("Jwt error: " + e.getMessage());
-        }finally {
+        } finally {
             filterChain.doFilter(request, response);
         }
     }
 
     private String extractToken(HttpServletRequest request) {
+        final String bearerPrefix = "Bearer ";
         String bearerToken = request.getHeader("Authorization");
-        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
+
+        if (bearerToken != null && bearerToken.startsWith(bearerPrefix)) {
+            return bearerToken.substring(bearerPrefix.length());
         }
+
         return null;
     }
+
 }

@@ -5,8 +5,7 @@ import ru.test.taskmanagementsystem.model.dto.CommentDto;
 import ru.test.taskmanagementsystem.model.dto.TaskDto;
 import ru.test.taskmanagementsystem.model.entity.Comment;
 import ru.test.taskmanagementsystem.model.entity.Task;
-import ru.test.taskmanagementsystem.model.enums.Priority;
-import ru.test.taskmanagementsystem.model.enums.Status;
+
 
 import java.util.Collections;
 
@@ -18,15 +17,11 @@ public class TaskMapper {
         taskDto.setTitle(task.getTitle());
         taskDto.setDescription(task.getDescription());
 
-        if(taskDto.getPriority() != null) {
+        if (taskDto.getPriority() != null) {
             taskDto.setPriority(task.getPriority());
-        }else {
-            taskDto.setPriority(Priority.MEDIUM);
         }
-        if(taskDto.getStatus() != null) {
+        if (taskDto.getStatus() != null) {
             taskDto.setStatus(task.getStatus());
-        }else{
-            taskDto.setStatus(Status.PENDING);
         }
 
         if (task.getAssignee() != null) {
@@ -34,15 +29,16 @@ public class TaskMapper {
         } else {
             taskDto.setAssigneeUsername(null);
         }
+
         taskDto.setAuthorUsername(task.getAuthor().getUsername());
 
-         if (task.getComments() != null) {
-             taskDto.setComments(task.getComments().stream()
-                     .map(this::toCommentDto)
-                     .toList());
-         } else {
-             taskDto.setComments(Collections.emptyList());
-         }
+        if (task.getComments() != null) {
+            taskDto.setComments(task.getComments().stream()
+                    .map(this::toCommentDto)
+                    .toList());
+        } else {
+            taskDto.setComments(Collections.emptyList());
+        }
 
         return taskDto;
     }

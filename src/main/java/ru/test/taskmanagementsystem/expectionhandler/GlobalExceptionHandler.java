@@ -18,10 +18,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Object> handleBadRequestException(BadRequestException e, HttpServletRequest request) {
         return buildResponseEntity(HttpStatus.BAD_REQUEST, e.getMessage(), request.getRequestURI());
     }
+
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<Object> handleNotFoundException(NotFoundException e, HttpServletRequest request) {
         return buildResponseEntity(HttpStatus.NOT_FOUND, e.getMessage(), request.getRequestURI());
     }
+
     @ExceptionHandler(ForbiddenException.class)
     public ResponseEntity<Object> handleForbiddenException(ForbiddenException e, HttpServletRequest request) {
         return buildResponseEntity(HttpStatus.FORBIDDEN, e.getMessage(), request.getRequestURI());
@@ -30,9 +32,8 @@ public class GlobalExceptionHandler {
     private ResponseEntity<Object> buildResponseEntity(
             HttpStatus status,
             String message,
-            String path)
-    {
-        Map<String,Object> body = new LinkedHashMap<>();
+            String path) {
+        Map<String, Object> body = new LinkedHashMap<>();
         body.put("timestamp", OffsetDateTime.now().toString());
         body.put("error", status.getReasonPhrase());
         body.put("status", status.value());

@@ -16,4 +16,9 @@ public class TaskDto {
     private String authorUsername;
     private String assigneeUsername;
     private List<CommentDto> comments;
+
+    public TaskDto() {
+        this.status = Status.PENDING;
+        this.priority = Priority.MEDIUM;
+    }
 }
