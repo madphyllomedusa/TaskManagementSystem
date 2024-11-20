@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -26,54 +27,63 @@ public class TaskController {
     private final TaskService taskService;
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<TaskDto> addTask(@RequestBody TaskDto taskDto) {
         TaskDto createdTask = taskService.addTask(taskDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdTask);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<TaskDto> updateTask(@PathVariable Long id, @RequestBody TaskDto taskDto) {
         TaskDto updatedTask = taskService.updateTask(id, taskDto);
         return ResponseEntity.ok(updatedTask);
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<TaskDto> getTaskById(@PathVariable Long id) {
         TaskDto taskDto = taskService.getTaskById(id);
         return ResponseEntity.ok(taskDto);
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
         taskService.deleteTaskById(id);
         return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/{id}/status")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<TaskDto> updateTaskStatus(@PathVariable Long id, @RequestParam Status status) {
         TaskDto updatedTask = taskService.changeStatus(id, status);
         return ResponseEntity.ok(updatedTask);
     }
 
     @PutMapping("/{id}/priority")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<TaskDto> updateTaskPriority(@PathVariable Long id, @RequestParam Priority priority) {
         TaskDto updatedTask = taskService.changePriority(id, priority);
         return ResponseEntity.ok(updatedTask);
     }
 
     @PutMapping("/{id}/assignee")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<TaskDto> updateAssignTask(@PathVariable Long id, @RequestParam Long assigneeId) {
         TaskDto updatedTask = taskService.assignTask(id, assigneeId);
         return ResponseEntity.ok(updatedTask);
     }
 
     @PostMapping("/{id}/comments")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<CommentDto> addComment(@PathVariable Long id, @RequestBody String commentText) {
         CommentDto newComment = taskService.addComment(id, commentText);
         return ResponseEntity.status(HttpStatus.CREATED).body(newComment);
     }
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Page<TaskDto>> filterTasks(
             @RequestParam(required = false) String authorUsername,
             @RequestParam(required = false) String assigneeUsername,
