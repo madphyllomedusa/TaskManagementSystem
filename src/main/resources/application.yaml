@@ -20,6 +20,14 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
 
+
 jwt:
   secret-key: b5439e7f5737d4751d3e65d05e70e2277b64b5549615e559214b3051431ecb91020694f34622c5bc2b58eacd86bcc95efca33c365cae5564a892c92b11661550
   expiration-ms: 86400000
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+

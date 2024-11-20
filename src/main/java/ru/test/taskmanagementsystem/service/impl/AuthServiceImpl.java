@@ -3,11 +3,11 @@ package ru.test.taskmanagementsystem.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import ru.test.taskmanagementsystem.config.JwtService;
+import ru.test.taskmanagementsystem.expectionhandler.BadRequestException;
 import ru.test.taskmanagementsystem.model.dto.JwtAuthenticationResponse;
 import ru.test.taskmanagementsystem.model.dto.SignInRequest;
 import ru.test.taskmanagementsystem.model.dto.SignUpRequest;
@@ -36,7 +36,7 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден"));
 
         if(!passwordEncoder.matches(password, user.getPassword())) {
-            throw new BadCredentialsException("Неверный пароль");
+            throw new BadRequestException("Неверный пароль");
         }
 
         String token = jwtService.generateToken(user.getEmail(), user.getRole().toString());
@@ -50,12 +50,12 @@ public class AuthServiceImpl implements AuthService {
         logger.info("Registering user with email {}", signUpRequest.getEmail());
         if(userRepository.findByEmail(signUpRequest.getEmail()).isPresent()) {
             logger.info("User with email {} already exists", signUpRequest.getEmail());
-            throw new BadCredentialsException("Пользователь с таким адресом электронной почты "
+            throw new BadRequestException("Пользователь с таким адресом электронной почты "
                     + signUpRequest.getEmail() + " уже зарегистрирован");
         }
 
         if (!signUpRequest.getPassword().equals(signUpRequest.getConfirmPassword())) {
-            throw new BadCredentialsException("Пароли не совпадают");
+            throw new BadRequestException("Пароли не совпадают");
         }
 
         signUpRequest.setPassword(passwordEncoder.encode(signUpRequest.getPassword()));
