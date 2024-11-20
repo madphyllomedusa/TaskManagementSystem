@@ -20,7 +20,7 @@ import ru.test.taskmanagementsystem.service.AuthService;
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
-    private final static Logger logger = LoggerFactory.getLogger(AuthServiceImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(AuthServiceImpl.class);
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
@@ -64,7 +64,7 @@ public class AuthServiceImpl implements AuthService {
             signUpRequest.setRole(Role.ROLE_USER);
         }
 
-        User user = userMapper.toEntity(signUpRequest);
+        User user = userMapper.toSignUpRequest(signUpRequest);
         User savedUser = userRepository.save(user);
         String token = jwtService.generateToken(savedUser.getEmail(), savedUser.getRole().toString());
         logger.info("User {} successfully registered", user.getEmail());

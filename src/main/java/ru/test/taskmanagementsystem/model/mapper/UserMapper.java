@@ -16,7 +16,7 @@ public class UserMapper {
         return userDto;
     }
 
-    public User toEntity(SignUpRequest signUpRequest) {
+    public User toSignUpRequest(SignUpRequest signUpRequest) {
         User user = new User();
         user.setUsername(signUpRequest.getUsername());
         user.setEmail(signUpRequest.getEmail().toLowerCase());
@@ -25,4 +25,15 @@ public class UserMapper {
         user.setRole(signUpRequest.getRole());
         return user;
     }
+
+    public User toEntity(UserDto userDto) {
+        User user = new User();
+        user.setUsername(userDto.getUsername());
+        user.setEmail(userDto.getEmail().toLowerCase());
+        user.setUsername(userDto.getUsername().toLowerCase());
+        user.setRole(userDto.getRole());
+        return user;
+
+    }
+
 }

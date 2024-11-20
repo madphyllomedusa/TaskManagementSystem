@@ -33,8 +33,7 @@ public class TaskController {
 
     @PutMapping("/{id}")
     public ResponseEntity<TaskDto> updateTask(@PathVariable Long id, @RequestBody TaskDto taskDto) {
-        taskDto.setId(id);
-        TaskDto updatedTask = taskService.updateTask(taskDto);
+        TaskDto updatedTask = taskService.updateTask(id, taskDto);
         return ResponseEntity.ok(updatedTask);
     }
 
@@ -82,7 +81,7 @@ public class TaskController {
             @RequestParam(required = false) Status status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        Page<TaskDto> tasks = taskService.filterTasks(authorUsername,assigneeUsername,priority,status,page,size);
+        Page<TaskDto> tasks = taskService.filterTasks(authorUsername, assigneeUsername, priority, status, page, size);
         return ResponseEntity.ok(tasks);
     }
 

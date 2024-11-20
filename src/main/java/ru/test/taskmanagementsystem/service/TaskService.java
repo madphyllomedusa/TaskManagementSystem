@@ -1,7 +1,6 @@
 package ru.test.taskmanagementsystem.service;
 
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import ru.test.taskmanagementsystem.model.dto.CommentDto;
 import ru.test.taskmanagementsystem.model.dto.TaskDto;
 import ru.test.taskmanagementsystem.model.enums.Priority;
@@ -9,7 +8,7 @@ import ru.test.taskmanagementsystem.model.enums.Status;
 
 public interface TaskService {
     TaskDto addTask(TaskDto taskDto);
-    TaskDto updateTask(TaskDto taskDto);
+    TaskDto updateTask(Long id,TaskDto taskDto);
     TaskDto getTaskById(Long id);
     void deleteTaskById(Long id);
     TaskDto changeStatus(Long id, Status status);
