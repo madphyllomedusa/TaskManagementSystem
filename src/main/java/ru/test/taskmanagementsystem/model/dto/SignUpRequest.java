@@ -13,6 +13,6 @@ public class SignUpRequest {
 
     @Override
     public String toString() {
-        return username;
+        return email;
     }
 }

@@ -30,8 +30,7 @@ public class GlobalExceptionHandler {
     private ResponseEntity<Object> buildResponseEntity(
             HttpStatus status,
             String message,
-            String path)
-    {
+            String path) {
         Map<String,Object> body = new LinkedHashMap<>();
         body.put("timestamp", OffsetDateTime.now().toString());
         body.put("error", status.getReasonPhrase());
