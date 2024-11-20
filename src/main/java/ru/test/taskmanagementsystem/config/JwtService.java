@@ -5,6 +5,7 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.util.Date;
 
 @Service
@@ -12,15 +13,15 @@ public class JwtService {
 
     @Value("${jwt.secret-key}")
     private  String secret;
-    @Value("${jwt.expiration-ms}")
-    private  Long expiration;
+    @Value("${jwt.expiration}")
+    private Duration expiration;
 
     public String generateToken(String email, String role) {
         return Jwts.builder()
                 .setSubject(email)
                 .claim("role", role)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + expiration))
+                .setExpiration(new Date(System.currentTimeMillis() + expiration.toMillis()))
                 .signWith(SignatureAlgorithm.HS256, secret)
                 .compact();
     }
