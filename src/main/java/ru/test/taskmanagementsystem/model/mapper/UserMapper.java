@@ -22,7 +22,6 @@ public class UserMapper {
         user.setEmail(signUpRequest.getEmail().toLowerCase());
         user.setUsername(signUpRequest.getUsername().toLowerCase());
         user.setPassword(signUpRequest.getPassword());
-        user.setRole(signUpRequest.getRole());
         return user;
     }
 
