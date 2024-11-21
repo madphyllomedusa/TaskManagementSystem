@@ -1,11 +1,11 @@
 package ru.test.taskmanagementsystem.expectionhandler;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.apache.coyote.BadRequestException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.time.OffsetDateTime;
 import java.util.LinkedHashMap;
@@ -27,6 +27,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ForbiddenException.class)
     public ResponseEntity<Object> handleForbiddenException(ForbiddenException e, HttpServletRequest request) {
         return buildResponseEntity(HttpStatus.FORBIDDEN, e.getMessage(), request.getRequestURI());
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Object> handleAccessDeniedException(AccessDeniedException e, HttpServletRequest request) {
+        return buildResponseEntity(HttpStatus.FORBIDDEN, "У вас нет доступа", request.getRequestURI());
     }
 
     private ResponseEntity<Object> buildResponseEntity(

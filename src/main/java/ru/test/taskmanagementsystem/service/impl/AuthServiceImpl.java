@@ -30,7 +30,7 @@ public class AuthServiceImpl implements AuthService {
     public JwtAuthenticationResponse login(SignInRequest signInRequest) {
         String email = signInRequest.getEmail();
         String password = signInRequest.getPassword();
-        logger.info("Attempting to login user with email {}", email);
+        logger.info("Attempting to login user");
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден"));
@@ -40,21 +40,23 @@ public class AuthServiceImpl implements AuthService {
         }
 
         String token = jwtService.generateToken(user.getEmail(), user.getRole().toString());
-        logger.info("User {} successfully logged in", user.getEmail());
-        logger.info("token: {}", token);
+        logger.info("User successfully logged in");
         return new JwtAuthenticationResponse(token);
     }
 
     @Override
     public JwtAuthenticationResponse register(SignUpRequest signUpRequest) {
-        logger.info("Registering user with email {}", signUpRequest.getEmail());
-        if (userRepository.findByEmail(signUpRequest.getEmail()).isPresent()) {
+        logger.info("Attempting to register user");
+        boolean isEmailNotUnique = userRepository.findByEmail(signUpRequest.getEmail()).isPresent();
+        boolean isPasswordSame = signUpRequest.getPassword().equals(signUpRequest.getConfirmPassword());
+
+        if (isEmailNotUnique) {
             logger.info("User with email {} already exists", signUpRequest.getEmail());
             throw new BadRequestException("Пользователь с таким адресом электронной почты "
                     + signUpRequest.getEmail() + " уже зарегистрирован");
         }
 
-        if (!signUpRequest.getPassword().equals(signUpRequest.getConfirmPassword())) {
+        if (!isPasswordSame) {
             throw new BadRequestException("Пароли не совпадают");
         }
 
