@@ -1,12 +1,15 @@
-openapi: 3.0.3
+openapi: 3.1.0
 info:
   title: Task Management System API
   version: '1.0.0'
-  description: API для управления задачами и аутентификации пользователей.
+  description: API Documentation for the Task Management System
   contact:
     name: Matthew
     email: matthew.vladimir@mail.ru
     url: https://github.com/madphyllomedusa
+  license:
+    name: Apache 2.0
+    url: http://springdoc.org
 servers:
   - url: http://localhost:8080
 paths:

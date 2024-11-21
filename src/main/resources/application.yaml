@@ -26,10 +26,13 @@ jwt:
   expiration: 24h
 
 springdoc:
-  api-docs:
-    enabled: false
   swagger-ui:
-    url: /openapi.yaml
+    url: /v3/api-docs
     path: /swagger-ui.html
-
-
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springdoc: DEBUG
