@@ -3,11 +3,11 @@ package ru.test.taskmanagementsystem.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import ru.test.taskmanagementsystem.config.JwtService;
 import ru.test.taskmanagementsystem.expectionhandler.BadRequestException;
+import ru.test.taskmanagementsystem.expectionhandler.NotFoundException;
 import ru.test.taskmanagementsystem.model.dto.JwtAuthenticationResponse;
 import ru.test.taskmanagementsystem.model.dto.SignInRequest;
 import ru.test.taskmanagementsystem.model.dto.SignUpRequest;
@@ -33,7 +33,7 @@ public class AuthServiceImpl implements AuthService {
         logger.info("Attempting to login user");
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден"));
+                .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
 
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new BadRequestException("Неверный пароль");
@@ -48,12 +48,18 @@ public class AuthServiceImpl implements AuthService {
     public JwtAuthenticationResponse register(SignUpRequest signUpRequest) {
         logger.info("Attempting to register user");
         boolean isEmailNotUnique = userRepository.findByEmail(signUpRequest.getEmail()).isPresent();
+        boolean isUsernameNotUnique = userRepository.findByUsername(signUpRequest.getUsername()).isPresent();
         boolean isPasswordSame = signUpRequest.getPassword().equals(signUpRequest.getConfirmPassword());
 
         if (isEmailNotUnique) {
             logger.info("User with email {} already exists", signUpRequest.getEmail());
             throw new BadRequestException("Пользователь с таким адресом электронной почты "
                     + signUpRequest.getEmail() + " уже зарегистрирован");
+        }
+
+        if (isUsernameNotUnique) {
+            logger.info("Username {} already exists", signUpRequest.getUsername());
+            throw new BadRequestException("Этот username уже занят");
         }
 
         if (!isPasswordSame) {

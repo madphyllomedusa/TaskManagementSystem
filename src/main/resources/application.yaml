@@ -28,7 +28,7 @@ jwt:
 springdoc:
   swagger-ui:
     url: /v3/api-docs
-    path: /swagger-ui.html
+    path: /swagger-ui
   api-docs:
     enabled: true
     path: /v3/api-docs

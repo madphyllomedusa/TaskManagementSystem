@@ -31,26 +31,37 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain)
             throws ServletException, IOException {
-        try {
-            String token = extractToken(request);
-            if (token != null && jwtService.validateToken(token)) {
-                String email = jwtService.extractEmail(token);
-                String role = jwtService.extractRole(token);
+        String token = extractToken(request);
+        if (token != null) {
+            try {
+                if (jwtService.validateToken(token)) {
+                    String email = jwtService.extractEmail(token);
+                    String role = jwtService.extractRole(token);
 
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        email,
-                        null,
-                        Collections.singleton(new SimpleGrantedAuthority(role))
-                );
-                authentication.setDetails(new WebAuthenticationDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-                logger.info("Authentication set in SecurityContextHolder: {}", SecurityContextHolder.getContext().getAuthentication());
+                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                            email,
+                            null,
+                            Collections.singleton(new SimpleGrantedAuthority(role))
+                    );
+                    authentication.setDetails(new WebAuthenticationDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                    logger.info("Authentication set in SecurityContextHolder: {}", SecurityContextHolder.getContext().getAuthentication());
+                } else {
+                    logger.warn("Invalid JWT token");
+                    SecurityContextHolder.clearContext();
+                }
+            } catch (JwtException e) {
+                logger.error("Jwt error: {}", e.getMessage());
+                SecurityContextHolder.clearContext();
             }
-        } catch (JwtException e) {
-            logger.error("Jwt error: {}", e.getMessage());
-        } finally {
-            filterChain.doFilter(request, response);
         }
+        filterChain.doFilter(request, response);
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        String path = request.getRequestURI();
+        return path.startsWith("/auth/");
     }
 
     private String extractToken(HttpServletRequest request) {
