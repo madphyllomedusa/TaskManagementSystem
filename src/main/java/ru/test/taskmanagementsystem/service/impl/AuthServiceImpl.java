@@ -35,7 +35,7 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден"));
 
-        if(!passwordEncoder.matches(password, user.getPassword())) {
+        if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new BadRequestException("Неверный пароль");
         }
 
@@ -48,7 +48,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public JwtAuthenticationResponse register(SignUpRequest signUpRequest) {
         logger.info("Registering user with email {}", signUpRequest.getEmail());
-        if(userRepository.findByEmail(signUpRequest.getEmail()).isPresent()) {
+        if (userRepository.findByEmail(signUpRequest.getEmail()).isPresent()) {
             logger.info("User with email {} already exists", signUpRequest.getEmail());
             throw new BadRequestException("Пользователь с таким адресом электронной почты "
                     + signUpRequest.getEmail() + " уже зарегистрирован");

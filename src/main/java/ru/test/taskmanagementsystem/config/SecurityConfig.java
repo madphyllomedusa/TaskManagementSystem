@@ -47,10 +47,10 @@ public class SecurityConfig {
                                                             " \"status\": %d," +
                                                             " \"message\": \"%s\"," +
                                                             " \"path\": \"%s\"}",
-                                            OffsetDateTime.now(),
-                                            HttpServletResponse.SC_FORBIDDEN,
-                                            "У вас нет доступа",
-                                            request.getRequestURI());
+                                                    OffsetDateTime.now(),
+                                                    HttpServletResponse.SC_FORBIDDEN,
+                                                    "У вас нет доступа",
+                                                    request.getRequestURI());
 
                                     response.getWriter().write(jsonResponse);
                                     response.getWriter().flush();

@@ -12,7 +12,7 @@ import java.util.Date;
 public class JwtService {
 
     @Value("${jwt.secret-key}")
-    private  String secret;
+    private String secret;
     @Value("${jwt.expiration}")
     private Duration expiration;
 
@@ -33,6 +33,7 @@ public class JwtService {
                 .getBody()
                 .getSubject();
     }
+
     public String extractRole(String token) {
         return Jwts.parser()
                 .setSigningKey(secret)
@@ -42,11 +43,10 @@ public class JwtService {
     }
 
     public boolean validateToken(String token) {
-        try{
+        try {
             Jwts.parser().setSigningKey(secret).parseClaimsJws(token);
             return true;
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             return false;
         }
     }
