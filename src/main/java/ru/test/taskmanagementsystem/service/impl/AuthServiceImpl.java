@@ -64,7 +64,7 @@ public class AuthServiceImpl implements AuthService {
             signUpRequest.setRole(Role.ROLE_USER);
         }
 
-        User user = userMapper.toSignUpRequest(signUpRequest);
+        User user = userMapper.fromSignUpRequest(signUpRequest);
         User savedUser = userRepository.save(user);
         String token = jwtService.generateToken(savedUser.getEmail(), savedUser.getRole().toString());
         logger.info("User successfully registered");

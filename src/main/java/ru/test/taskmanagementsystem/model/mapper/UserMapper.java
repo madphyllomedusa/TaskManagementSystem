@@ -16,7 +16,7 @@ public class UserMapper {
         return userDto;
     }
 
-    public User toSignUpRequest(SignUpRequest signUpRequest) {
+    public User fromSignUpRequest(SignUpRequest signUpRequest) {
         User user = new User();
         user.setUsername(signUpRequest.getUsername());
         user.setEmail(signUpRequest.getEmail().toLowerCase());
