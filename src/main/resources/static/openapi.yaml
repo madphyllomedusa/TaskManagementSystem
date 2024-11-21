@@ -1,0 +1,686 @@
+openapi: 3.0.3
+info:
+  title: Task Management System API
+  version: '1.0.0'
+  description: API для управления задачами и аутентификации пользователей.
+  contact:
+    name: Matthew
+    email: matthew.vladimir@mail.ru
+    url: https://github.com/madphyllomedusa
+servers:
+  - url: http://localhost:8080
+paths:
+  /auth/register:
+    post:
+      summary: Регистрация пользователя
+      description: |
+        Регистрация нового пользователя в сервисе.
+        Пользователь должен предоставить уникальный email и пароль, совпадающий с подтверждением пароля.
+        Если роль не указана, будет назначена роль 'ROLE_USER' по умолчанию.
+      requestBody:
+        description: Данные пользователя для регистрации
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignUpRequest'
+      responses:
+        '201':
+          description: Пользователь успешно зарегистрирован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JwtAuthenticationResponse'
+        '400':
+          description: |
+            Возможные причины:
+            - Email уже зарегистрирован.
+            - Пароли не совпадают.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /auth/login:
+    post:
+      summary: Авторизация пользователя
+      description: |
+        Авторизация уже зарегистрированного пользователя в сервисе.
+        Пользователь должен предоставить свой email и пароль, который он указывал при регистрации.
+      requestBody:
+        description: Данные пользователя для авторизации
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignInRequest'
+      responses:
+        '200':
+          description: Пользователь успешно авторизован
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JwtAuthenticationResponse'
+        '400':
+          description: Пароль не совпадает с сохраненным в системе.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Email, введенный пользователем, отсутствует в базе данных.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /tasks:
+    post:
+      summary: Создать задачу
+      description: Добавляет новую задачу в систему.
+      requestBody:
+        description: Данные новой задачи
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskDto'
+      responses:
+        '201':
+          description: Задача успешно создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskDto'
+        '400':
+          description: Некорректные данные задачи
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Доступ запрещён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Автор не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      summary: Фильтрация задач
+      description: Возвращает список задач с возможностью фильтрации и пагинации.
+      parameters:
+        - in: query
+          name: authorUsername
+          schema:
+            type: string
+          description: Имя пользователя автора задачи
+        - in: query
+          name: assigneeUsername
+          schema:
+            type: string
+          description: Имя пользователя исполнителя задачи
+        - in: query
+          name: priority
+          schema:
+            $ref: '#/components/schemas/Priority'
+          description: Приоритет задачи
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/Status'
+          description: Статус задачи
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 0
+          description: Номер страницы для пагинации
+        - in: query
+          name: size
+          schema:
+            type: integer
+            default: 10
+          description: Размер страницы для пагинации
+      responses:
+        '200':
+          description: Список задач успешно получен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageTaskDto'
+        '400':
+          description: Некорректные параметры фильтрации или пагинации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Доступ запрещён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /tasks/{id}:
+    get:
+      summary: Получить задачу
+      description: Возвращает данные задачи по её ID.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Идентификатор задачи
+      responses:
+        '200':
+          description: Данные задачи успешно получены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskDto'
+        '400':
+          description: Некорректный ID задачи
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Доступ запрещён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Задача не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      summary: Обновить задачу
+      description: Обновляет данные задачи по её ID.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Идентификатор задачи
+      requestBody:
+        description: Обновлённые данные задачи
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskDto'
+      responses:
+        '200':
+          description: Данные задачи успешно обновлены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskDto'
+        '400':
+          description: Некорректный ID задачи или данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Доступ запрещён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Задача или пользователь не найдены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Удалить задачу
+      description: Удаляет задачу по её ID.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Идентификатор задачи
+      responses:
+        '204':
+          description: Задача успешно удалена
+        '400':
+          description: Некорректный ID задачи
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Доступ запрещён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Задача не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /tasks/{id}/status:
+    put:
+      summary: Изменить статус задачи
+      description: Обновляет статус задачи по её ID.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Идентификатор задачи
+        - in: query
+          name: status
+          required: true
+          schema:
+            $ref: '#/components/schemas/Status'
+          description: Новый статус задачи
+      responses:
+        '200':
+          description: Статус успешно изменён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskDto'
+        '400':
+          description: Некорректный ID задачи или статус
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: |
+            Доступ запрещён (не является администратором или исполнителем задачи)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Задача не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /tasks/{id}/priority:
+    put:
+      summary: Изменить приоритет задачи
+      description: Обновляет приоритет задачи по её ID.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Идентификатор задачи
+        - in: query
+          name: priority
+          required: true
+          schema:
+            $ref: '#/components/schemas/Priority'
+          description: Новый приоритет задачи
+      responses:
+        '200':
+          description: Приоритет успешно изменён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskDto'
+        '400':
+          description: Некорректный ID задачи или приоритет
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Доступ запрещён (требуется роль администратора)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Задача не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /tasks/{id}/assignee:
+    put:
+      summary: Изменить исполнителя задачи
+      description: Обновляет исполнителя задачи по её ID.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Идентификатор задачи
+        - in: query
+          name: assigneeId
+          required: true
+          schema:
+            type: integer
+          description: Новый исполнитель задачи
+      responses:
+        '200':
+          description: Исполнитель успешно изменён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskDto'
+        '400':
+          description: Некорректный ID задачи или исполнителя
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Доступ запрещён (требуется роль администратора)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Задача или исполнитель не найдены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /tasks/{id}/comments:
+    post:
+      summary: Добавить комментарий к задаче
+      description: Добавляет комментарий к задаче по её ID.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: Идентификатор задачи
+      requestBody:
+        description: Текст комментария
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+              example: Ваш комментарий
+      responses:
+        '201':
+          description: Комментарий успешно добавлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentDto'
+        '400':
+          description: Некорректный ID задачи или текст комментария
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: |
+            Доступ запрещён (не является администратором или исполнителем задачи)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Задача не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    SignUpRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email пользователя
+        password:
+          type: string
+          format: password
+          description: Пароль пользователя
+        confirmPassword:
+          type: string
+          format: password
+          description: Подтверждение пароля
+        role:
+          type: string
+          description: Роль пользователя (опционально)
+      required:
+        - email
+        - password
+        - confirmPassword
+    SignInRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email пользователя
+        password:
+          type: string
+          format: password
+          description: Пароль пользователя
+      required:
+        - email
+        - password
+    JwtAuthenticationResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          description: JWT токен доступа
+        tokenType:
+          type: string
+          description: Тип токена (обычно "Bearer")
+          example: Bearer
+      required:
+        - accessToken
+        - tokenType
+    TaskDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Идентификатор задачи
+        title:
+          type: string
+          description: Заголовок задачи
+        description:
+          type: string
+          description: Описание задачи
+        status:
+          $ref: '#/components/schemas/Status'
+        priority:
+          $ref: '#/components/schemas/Priority'
+        authorId:
+          type: integer
+          description: Идентификатор автора задачи
+        assigneeId:
+          type: integer
+          description: Идентификатор исполнителя задачи
+        createdAt:
+          type: string
+          format: date-time
+          description: Дата и время создания задачи
+        updatedAt:
+          type: string
+          format: date-time
+          description: Дата и время последнего обновления задачи
+      required:
+        - title
+        - description
+        - status
+        - priority
+    CommentDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Идентификатор комментария
+        taskId:
+          type: integer
+          description: Идентификатор задачи
+        authorId:
+          type: integer
+          description: Идентификатор автора комментария
+        text:
+          type: string
+          description: Текст комментария
+        createdAt:
+          type: string
+          format: date-time
+          description: Дата и время создания комментария
+      required:
+        - taskId
+        - authorId
+        - text
+    Status:
+      type: string
+      description: Статус задачи
+      enum:
+        - IN_PROGRESS
+        - COMPLETED
+        - CLOSED
+    Priority:
+      type: string
+      description: Приоритет задачи
+      enum:
+        - LOW
+        - MEDIUM
+        - HIGH
+    ErrorResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Время ошибки
+        status:
+          type: integer
+          description: HTTP статус код
+        error:
+          type: string
+          description: Краткое описание ошибки
+        message:
+          type: string
+          description: Детальное сообщение об ошибке
+        path:
+          type: string
+          description: Путь запроса, при котором возникла ошибка
+      required:
+        - timestamp
+        - status
+        - error
+        - message
+        - path
+    PageTaskDto:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskDto'
+          description: Список задач на текущей странице
+        totalElements:
+          type: integer
+          description: Общее количество элементов
+        totalPages:
+          type: integer
+          description: Общее количество страниц
+        size:
+          type: integer
+          description: Размер страницы
+        number:
+          type: integer
+          description: Номер текущей страницы
+      required:
+        - content
+        - totalElements
+        - totalPages
+        - size
+        - number
