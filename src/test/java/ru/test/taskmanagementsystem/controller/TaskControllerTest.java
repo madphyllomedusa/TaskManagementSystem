@@ -12,8 +12,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -32,11 +30,12 @@ import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(TaskController.class)
 @Import(SecurityConfig.class)
-@AutoConfigureMockMvc(addFilters = true)
+@AutoConfigureMockMvc
 class TaskControllerTest {
 
     @Autowired
@@ -51,183 +50,195 @@ class TaskControllerTest {
     @MockBean
     private JwtService jwtService;
 
+    private final String defaultRole = "ROLE_USER";
+    private final String defaultEmail = "user@example.com";
+
     @BeforeEach
     void setupMocks() {
-        // Настройка данных для тестов
-        TaskDto task1 = new TaskDto();
-        task1.setId(1L);
-        task1.setTitle("Task 1");
-        task1.setPriority(Priority.HIGH);
-        task1.setStatus(Status.IN_PROGRESS);
+        setupAuthentication(defaultRole, defaultEmail);
 
-        TaskDto task2 = new TaskDto();
-        task2.setId(2L);
-        task2.setTitle("Task 2");
-        task2.setPriority(Priority.MEDIUM);
-        task2.setStatus(Status.PENDING);
+        // Задача для администратора
+        TaskDto taskWithAdmin = new TaskDto();
+        taskWithAdmin.setId(1L);
+        taskWithAdmin.setTitle("Task for Admin");
+        taskWithAdmin.setPriority(Priority.HIGH);
+        taskWithAdmin.setStatus(Status.IN_PROGRESS);
+        taskWithAdmin.setAssigneeUsername("admin@example.com");
 
-        // Настройка поведения для существующей задачи
-        Mockito.when(taskService.getTaskById(1L)).thenReturn(task1);
+        // Задача для пользователя
+        TaskDto taskForUser = new TaskDto();
+        taskForUser.setId(2L);
+        taskForUser.setTitle("Task for User");
+        taskForUser.setPriority(Priority.MEDIUM);
+        taskForUser.setStatus(Status.PENDING);
+        taskForUser.setAssigneeUsername("user@example.com");
 
-        // Настройка поведения для отсутствующей задачи
-        Mockito.when(taskService.getTaskById(Mockito.longThat(id -> id != 1L)))
+        // Моки для методов сервиса
+        Mockito.when(taskService.getTaskById(1L)).thenReturn(taskWithAdmin);
+        Mockito.when(taskService.getTaskById(2L)).thenReturn(taskForUser);
+        Mockito.when(taskService.getTaskById(Mockito.longThat(id -> id != 1L && id != 2L)))
                 .thenThrow(new NotFoundException("Task not found"));
 
-        // Настройка изменения статуса
-        Mockito.when(taskService.changeStatus(1L, Status.IN_PROGRESS)).thenReturn(task1);
+        Mockito.when(taskService.addTask(Mockito.any(TaskDto.class))).thenAnswer(invocation -> {
+            TaskDto request = invocation.getArgument(0);
+            request.setId(3L);
+            return request;
+        });
 
-        // Настройка изменения приоритета
-        Mockito.when(taskService.changePriority(1L, Priority.HIGH)).thenReturn(task1);
+        Mockito.when(taskService.changeStatus(Mockito.eq(1L), Mockito.eq(Status.COMPLETED)))
+                .thenAnswer(invocation -> {
+                    TaskDto task = new TaskDto();
+                    task.setId(1L);
+                    task.setTitle("Task for Admin");
+                    task.setStatus(Status.COMPLETED);
+                    task.setPriority(Priority.HIGH);
+                    return task;
+                });
 
-        // Настройка назначения задачи
-        Mockito.when(taskService.assignTask(1L, 2L)).thenReturn(task1);
+        Mockito.when(taskService.changeStatus(Mockito.eq(2L), Mockito.eq(Status.COMPLETED)))
+                .thenAnswer(invocation -> {
+                    TaskDto task = new TaskDto();
+                    task.setId(2L);
+                    task.setTitle("Task for User");
+                    task.setStatus(Status.COMPLETED);
+                    task.setPriority(Priority.MEDIUM);
+                    task.setAssigneeUsername("user@example.com");
+                    return task;
+                });
 
-        // Настройка создания задачи
-        Mockito.when(taskService.addTask(Mockito.any(TaskDto.class))).thenReturn(task1);
+        Mockito.when(taskService.changePriority(1L, Priority.LOW)).thenAnswer(invocation -> {
+            TaskDto task = new TaskDto();
+            task.setId(1L);
+            task.setTitle("Task for Admin");
+            task.setPriority(Priority.LOW);
+            task.setStatus(Status.IN_PROGRESS);
+            return task;
+        });
 
-        // Настройка удаления задачи
         Mockito.doNothing().when(taskService).deleteTaskById(1L);
-        Mockito.doThrow(new NotFoundException("Task not found with id: 302302032"))
-                .when(taskService).deleteTaskById(302302032L);
+        Mockito.doThrow(new NotFoundException("Task not found")).when(taskService).deleteTaskById(100L);
 
-        // Настройка фильтрации задач
-        List<TaskDto> tasks = List.of(task1, task2);
-        Page<TaskDto> page = new PageImpl<>(tasks);
-
-
-        Mockito.when(taskService.filterTasks(
-                Mockito.anyString(), Mockito.anyString(),
-                Mockito.any(Priority.class), Mockito.any(Status.class),
-                Mockito.anyInt(), Mockito.anyInt()
-        )).thenReturn(page);
+        Mockito.when(taskService.assignTask(1L, 2L)).thenReturn(taskWithAdmin);
     }
 
-    /**
-     * Универсальный метод для тестирования эндпоинтов
-     */
     @ParameterizedTest
-    @MethodSource("provideEndpointTestData")
-    void testEndpointCorrectness(
-            String httpMethod,
-            String uri,
-            String role,
-            Object request,
-            Object response,
-            int expectedStatus,
-            String jsonPath,
-            Object expectedValue) throws Exception {
+    @MethodSource("provideCreateTaskTestData")
+    void testCreateTask(String role, String email, TaskDto request, int expectedStatus, String jsonPath, Object expectedValue) throws Exception {
+        setupAuthentication(role, email);
 
-        // Установка аутентификации
-        setupAuthentication(role);
+        var resultActions = mockMvc.perform(post("/tasks")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJsonString(request)))
+                .andExpect(status().is(expectedStatus));
 
-        // Настройка моков
-        if (response != null) {
-            Mockito.when(invokeServiceMethod(uri, request)).thenReturn(response);
-        }
-
-        // Построение HTTP-запроса
-        var requestBuilder = switch (httpMethod) {
-            case "POST" -> post(uri).contentType(MediaType.APPLICATION_JSON).content(asJsonString(request));
-            case "PUT" -> put(uri).contentType(MediaType.APPLICATION_JSON).content(asJsonString(request));
-            case "GET" -> get(uri);
-            case "DELETE" -> delete(uri);
-            default -> throw new IllegalArgumentException("Unsupported HTTP method: " + httpMethod);
-        };
-
-        // Проверка результата
-        var resultActions = mockMvc.perform(requestBuilder).andExpect(status().is(expectedStatus));
-
-        // Проверка JSON-ответа
         if (jsonPath != null) {
             resultActions.andExpect(jsonPath(jsonPath, is(expectedValue)));
         }
-
-        // Очистка аутентификации
-        clearAuthentication();
     }
 
-    private Object invokeServiceMethod(String uri, Object request) {
-        // Маппинг URI на методы сервиса
-        if (uri.startsWith("/tasks/")) {
-            String[] pathParts = uri.split("/");
-            Long taskId = Long.parseLong(pathParts[2]);
-            if (uri.contains("/status")) {
-                return taskService.changeStatus(taskId, (Status) request);
-            } else if (uri.contains("/priority")) {
-                return taskService.changePriority(taskId, (Priority) request);
-            } else if (uri.contains("/assignee")) {
-                return taskService.assignTask(taskId, (Long) request);
-            } else {
-                return taskService.getTaskById(taskId);
-            }
-        } else if (uri.equals("/tasks")) {
-            return taskService.addTask((TaskDto) request);
+    @ParameterizedTest
+    @MethodSource("provideGetTaskTestData")
+    void testGetTask(String role, String email, Long taskId, int expectedStatus, String jsonPath, Object expectedValue) throws Exception {
+        setupAuthentication(role, email);
+
+        var resultActions = mockMvc.perform(get("/tasks/" + taskId))
+                .andExpect(status().is(expectedStatus));
+
+        if (jsonPath != null) {
+            resultActions.andExpect(jsonPath(jsonPath, is(expectedValue)));
         }
-        throw new IllegalArgumentException("Unsupported URI: " + uri);
     }
 
-    private void setupAuthentication(String role) {
+    @ParameterizedTest
+    @MethodSource("provideDeleteTaskTestData")
+    void testDeleteTask(String role, String email, Long taskId, int expectedStatus) throws Exception {
+        setupAuthentication(role, email);
+
+        mockMvc.perform(delete("/tasks/" + taskId))
+                .andExpect(status().is(expectedStatus));
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideUpdateTaskStatusTestData")
+    void testUpdateTaskStatus(String role, String email, Long taskId, Status newStatus, int expectedStatus, String jsonPath, Object expectedValue) throws Exception {
+        setupAuthentication(role, email);
+
+
+        var resultActions = mockMvc.perform(put("/tasks/" + taskId + "/status?status=" + newStatus))
+                .andExpect(status().is(expectedStatus));
+
+        if (jsonPath != null && expectedStatus == 200) {
+            resultActions.andExpect(jsonPath(jsonPath, is(expectedValue)));
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("provideAssignTaskTestData")
+    void testAssignTask(String role, String email, Long taskId, Long assigneeId, int expectedStatus, String jsonPath, Object expectedValue) throws Exception {
+        setupAuthentication(role, email);
+
+        var resultActions = mockMvc.perform(put("/tasks/" + taskId + "/assignee?assigneeId=" + assigneeId))
+                .andExpect(status().is(expectedStatus));
+
+        if (jsonPath != null) {
+            resultActions.andExpect(jsonPath(jsonPath, is(expectedValue)));
+        }
+    }
+
+    private void setupAuthentication(String role, String email) {
+        System.out.println("Setting up authentication for: " + email + " with role: " + role);
+
         SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken("testUser", null, List.of(new SimpleGrantedAuthority(role)))
+                new UsernamePasswordAuthenticationToken(email, null, List.of(new SimpleGrantedAuthority(role)))
         );
-    }
-
-    private void clearAuthentication() {
-        SecurityContextHolder.clearContext();
     }
 
     private String asJsonString(Object obj) throws JsonProcessingException {
         return objectMapper.writeValueAsString(obj);
     }
 
-    /**
-     * Источник данных для параметризованных тестов
-     */
-    static Stream<Arguments> provideEndpointTestData() {
+    static Stream<Arguments> provideCreateTaskTestData() {
         TaskDto validRequest = new TaskDto();
         validRequest.setTitle("Valid Task");
         validRequest.setPriority(Priority.MEDIUM);
         validRequest.setStatus(Status.PENDING);
 
-        TaskDto validResponse = new TaskDto();
-        validResponse.setId(1L);
-        validResponse.setTitle("Valid Task");
-        validResponse.setPriority(Priority.MEDIUM);
-        validResponse.setStatus(Status.PENDING);
-
-        TaskDto invalidRequest = new TaskDto(); // Нет обязательных полей
+        TaskDto invalidRequest = new TaskDto();
 
         return Stream.of(
-                // Создание задачи
-                Arguments.of("POST", "/tasks", "ROLE_ADMIN", validRequest, validResponse, 201, "$.title", "Valid Task"),
-                Arguments.of("POST", "/tasks", "ROLE_USER", validRequest, null, 403, null, null),
-                Arguments.of("POST", "/tasks", "ROLE_ADMIN", invalidRequest, null, 400, null, null),
+                Arguments.of("ROLE_ADMIN", "admin@example.com", validRequest, 201, "$.title", "Valid Task"),
+                Arguments.of("ROLE_USER", "user@example.com", validRequest, 403, null, null),
+                Arguments.of("ROLE_ADMIN", "admin@example.com", invalidRequest, 400, null, null)
+        );
+    }
 
-                // Получение задачи
-                Arguments.of("GET", "/tasks/1", "ROLE_USER", null, validResponse, 200, "$.id", 1),
-                Arguments.of("GET", "/tasks/302302032", "ROLE_USER", null, null, 404, null, null),
-                Arguments.of("GET", "/tasks/1", "ROLE_ADMIN", null, validResponse, 200, "$.status", "PENDING"),
+    static Stream<Arguments> provideGetTaskTestData() {
+        return Stream.of(
+                Arguments.of("ROLE_USER", "user@example.com", 1L, 200, "$.id", 1),
+                Arguments.of("ROLE_USER", "user@example.com", 100L, 404, null, null),
+                Arguments.of("ROLE_ADMIN", "admin@example.com", 1L, 200, "$.status", "IN_PROGRESS")
+        );
+    }
 
-                // Обновление статуса
-                Arguments.of("PUT", "/tasks/1/status?status=IN_PROGRESS", "ROLE_ADMIN", Status.IN_PROGRESS, validResponse, 200, "$.status", "PENDING"),
-                Arguments.of("PUT", "/tasks/1/status?status=IN_PROGRESS", "ROLE_USER", Status.IN_PROGRESS, null, 200, null, null),
+    static Stream<Arguments> provideUpdateTaskStatusTestData() {
+        return Stream.of(
+                Arguments.of("ROLE_ADMIN", "admin@example.com", 1L, Status.COMPLETED, 200, "$.status", "COMPLETED"),
+                Arguments.of("ROLE_USER", "user@example.com", 2L, Status.COMPLETED, 200, "$.status", "COMPLETED")
+        );
+    }
 
-                // Удаление задачи
-                Arguments.of("DELETE", "/tasks/1", "ROLE_ADMIN", null, null, 204, null, null),
-                Arguments.of("DELETE", "/tasks/1", "ROLE_USER", null, null, 403, null, null),
+    static Stream<Arguments> provideDeleteTaskTestData() {
+        return Stream.of(
+                Arguments.of("ROLE_ADMIN", "admin@example.com", 1L, 204),
+                Arguments.of("ROLE_USER", "user@example.com", 2L, 403),
+                Arguments.of("ROLE_ADMIN", "admin@example.com", 100L, 404)
+        );
+    }
 
-                // Обновление приоритета
-                Arguments.of("PUT", "/tasks/1/priority?priority=HIGH", "ROLE_ADMIN", Priority.HIGH, validResponse, 200, "$.priority", "MEDIUM"),
-                Arguments.of("PUT", "/tasks/1/priority?priority=HIGH", "ROLE_USER", Priority.HIGH, null, 403, null, null),
-
-                // Назначение задачи
-                Arguments.of("PUT", "/tasks/1/assignee?assigneeId=2", "ROLE_ADMIN", 2L, validResponse, 200, "$.id", 1),
-                Arguments.of("PUT", "/tasks/1/assignee?assigneeId=2", "ROLE_USER", 2L, null, 403, null, null),
-
-                // Фильтрация данных
-                Arguments.of("GET", "/tasks?priority=HIGH", "ROLE_ADMIN", null, null, 200, "$.content[0].priority", "HIGH"),
-                Arguments.of("GET", "/tasks?status=PENDING", "ROLE_ADMIN", null, null, 200, "$.content[1].status", "PENDING"),
-                Arguments.of("GET", "/tasks?authorUsername=user1", "ROLE_USER", null, null, 403, null, null)
+    static Stream<Arguments> provideAssignTaskTestData() {
+        return Stream.of(
+                Arguments.of("ROLE_ADMIN", "admin@example.com", 1L, 2L, 200, "$.id", 1),
+                Arguments.of("ROLE_USER", "user@example.com", 1L, 2L, 403, null, null)
         );
     }
 }

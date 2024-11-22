@@ -21,8 +21,6 @@ import ru.test.taskmanagementsystem.model.dto.SignInRequest;
 import ru.test.taskmanagementsystem.model.dto.SignUpRequest;
 import ru.test.taskmanagementsystem.service.AuthService;
 
-
-
 import java.util.stream.Stream;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -44,92 +42,95 @@ class AuthControllerTest {
     private JwtService jwtService;
 
     @ParameterizedTest
-    @MethodSource("provideValidSignUpRequests")
-    void testRegisterSuccess(SignUpRequest signUpRequest, JwtAuthenticationResponse expectedResponse) throws Exception {
-        Mockito.when(authService.register(Mockito.any(SignUpRequest.class))).thenReturn(expectedResponse);
+    @MethodSource("provideRegisterTestData")
+    void testRegister(SignUpRequest signUpRequest, JwtAuthenticationResponse expectedResponse, int expectedStatus) throws Exception {
+        if (expectedStatus == 201) {
+            Mockito.when(authService.register(Mockito.any(SignUpRequest.class))).thenReturn(expectedResponse);
+        } else {
+            Mockito.doThrow(new BadRequestException("Invalid data")).when(authService).register(Mockito.any(SignUpRequest.class));
+        }
 
-        mockMvc.perform(post("/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(asJsonString(signUpRequest)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.token").value(expectedResponse.getToken()));
+        var resultActions = mockMvc.perform(post("/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(asJsonString(signUpRequest)))
+                .andExpect(status().is(expectedStatus));
+
+        if (expectedStatus == 201) {
+            resultActions.andExpect(jsonPath("$.token").value(expectedResponse.getToken()));
+        }
     }
 
-    @ParameterizedTest
-    @MethodSource("provideInvalidSignUpRequests")
-    void testRegisterFailure(SignUpRequest signUpRequest) throws Exception {
-        Mockito.doThrow(new BadRequestException("Invalid data"))
-                .when(authService).register(Mockito.any(SignUpRequest.class));
-
-        mockMvc.perform(post("/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(asJsonString(signUpRequest)))
-                .andExpect(status().isBadRequest());
-    }
-
-    static Stream<Arguments> provideValidSignUpRequests() {
+    static Stream<Arguments> provideRegisterTestData() {
         return Stream.of(
                 Arguments.of(
                         new SignUpRequest("user1@mail.com", "username1", "password123", "password123"),
-                        new JwtAuthenticationResponse("valid-jwt-token-1")
+                        new JwtAuthenticationResponse("valid-jwt-token-1"),
+                        201
                 ),
                 Arguments.of(
                         new SignUpRequest("user2@mail.com", "username2", "password456", "password456"),
-                        new JwtAuthenticationResponse("valid-jwt-token-2")
+                        new JwtAuthenticationResponse("valid-jwt-token-2"),
+                        201
+                ),
+                Arguments.of(
+                        new SignUpRequest("", "user@mail.com", "password123", "password123"),
+                        null,
+                        400
+                ),
+                Arguments.of(
+                        new SignUpRequest("username", "invalid-email", "password123", "password123"),
+                        null,
+                        400
+                ),
+                Arguments.of(
+                        new SignUpRequest("username", "user@mail.com", "password123", "wrongpassword"),
+                        null,
+                        400
                 )
         );
     }
 
-    static Stream<Arguments> provideInvalidSignUpRequests() {
-        return Stream.of(
-                Arguments.of(new SignUpRequest("", "user@mail.com", "password123", "password123")),
-                Arguments.of(new SignUpRequest("username", "invalid-email", "password123", "password123")),
-                Arguments.of(new SignUpRequest("username", "user@mail.com", "password123", "wrongpassword"))
-        );
-    }
-
-
     @ParameterizedTest
-    @MethodSource("provideValidSignInRequests")
-    void testLoginSuccess(SignInRequest signInRequest, JwtAuthenticationResponse expectedResponse) throws Exception {
-        Mockito.when(authService.login(Mockito.any(SignInRequest.class))).thenReturn(expectedResponse);
+    @MethodSource("provideLoginTestData")
+    void testLogin(SignInRequest signInRequest, JwtAuthenticationResponse expectedResponse, int expectedStatus) throws Exception {
+        if (expectedStatus == 200) {
+            Mockito.when(authService.login(Mockito.any(SignInRequest.class))).thenReturn(expectedResponse);
+        } else {
+            Mockito.doThrow(new BadRequestException("Invalid credentials")).when(authService).login(Mockito.any(SignInRequest.class));
+        }
 
-        mockMvc.perform(post("/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(asJsonString(signInRequest)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").value(expectedResponse.getToken()));
+        var resultActions = mockMvc.perform(post("/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(asJsonString(signInRequest)))
+                .andExpect(status().is(expectedStatus));
+
+        if (expectedStatus == 200) {
+            resultActions.andExpect(jsonPath("$.token").value(expectedResponse.getToken()));
+        }
     }
 
-    @ParameterizedTest
-    @MethodSource("provideInvalidSignInRequests")
-    void testLoginFailure(SignInRequest signInRequest) throws Exception {
-        Mockito.doThrow(new BadRequestException("Invalid credentials"))
-                .when(authService).login(Mockito.any(SignInRequest.class));
-
-        mockMvc.perform(post("/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(asJsonString(signInRequest)))
-                .andExpect(status().isBadRequest());
-    }
-
-    static Stream<Arguments> provideValidSignInRequests() {
+    static Stream<Arguments> provideLoginTestData() {
         return Stream.of(
                 Arguments.of(
                         new SignInRequest("user1@mail.com", "password123"),
-                        new JwtAuthenticationResponse("valid-jwt-token-1")
+                        new JwtAuthenticationResponse("valid-jwt-token-1"),
+                        200
                 ),
                 Arguments.of(
                         new SignInRequest("user2@mail.com", "password456"),
-                        new JwtAuthenticationResponse("valid-jwt-token-2")
+                        new JwtAuthenticationResponse("valid-jwt-token-2"),
+                        200
+                ),
+                Arguments.of(
+                        new SignInRequest("user@mail.com", "wrongpassword"),
+                        null,
+                        400
+                ),
+                Arguments.of(
+                        new SignInRequest("nonexistentuser@mail.com", "password123"),
+                        null,
+                        400
                 )
-        );
-    }
-
-    static Stream<Arguments> provideInvalidSignInRequests() {
-        return Stream.of(
-                Arguments.of(new SignInRequest("user@mail.com", "wrongpassword")),
-                Arguments.of(new SignInRequest("nonexistentuser@mail.com", "password123"))
         );
     }
 
@@ -137,5 +138,4 @@ class AuthControllerTest {
         ObjectMapper mapper = new ObjectMapper();
         return mapper.writeValueAsString(obj);
     }
-
 }

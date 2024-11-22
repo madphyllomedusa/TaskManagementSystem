@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import ru.test.taskmanagementsystem.expectionhandler.BadRequestException;
 import ru.test.taskmanagementsystem.expectionhandler.ForbiddenException;
@@ -121,7 +122,7 @@ public class TaskServiceImpl implements TaskService {
         Task task = taskMapper.toEntity(getTaskById(id));
 
         if (!mayManageTask(task)) {
-            throw new ForbiddenException("У вас нет доступа для изменения статуса этой задачи");
+            throw new AccessDeniedException("У вас нет доступа для изменения статуса этой задачи");
         }
 
         logger.info("Task status successfully changed from {} to {}", task.getStatus(), status);
