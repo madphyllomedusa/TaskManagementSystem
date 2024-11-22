@@ -58,12 +58,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-        String path = request.getRequestURI();
-        return path.startsWith("/auth/");
-    }
-
     private String extractToken(HttpServletRequest request) {
         final String bearerPrefix = "Bearer ";
         String bearerToken = request.getHeader("Authorization");
