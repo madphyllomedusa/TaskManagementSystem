@@ -60,6 +60,6 @@ http://localhost:8081/swagger-ui/index.html
 ### Поддержка
 ### Если у вас возникли вопросы, обратитесь к разработчику:
 
-Telegram: t.me/phyllomeduska
+Telegram: ``` t.me/phyllomeduska```
 
-Email: matthew.vladimir@mail.ru
+Email: ```matthew.vladimir@mail.ru```
