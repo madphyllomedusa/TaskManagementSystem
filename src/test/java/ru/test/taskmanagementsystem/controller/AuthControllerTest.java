@@ -51,8 +51,8 @@ class AuthControllerTest {
         }
 
         var resultActions = mockMvc.perform(post("/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(asJsonString(signUpRequest)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJsonString(signUpRequest)))
                 .andExpect(status().is(expectedStatus));
 
         if (expectedStatus == 201) {
@@ -100,8 +100,8 @@ class AuthControllerTest {
         }
 
         var resultActions = mockMvc.perform(post("/auth/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(asJsonString(signInRequest)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJsonString(signInRequest)))
                 .andExpect(status().is(expectedStatus));
 
         if (expectedStatus == 200) {
