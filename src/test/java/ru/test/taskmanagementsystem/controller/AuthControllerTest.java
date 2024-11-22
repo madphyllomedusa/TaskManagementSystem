@@ -70,11 +70,11 @@ class AuthControllerTest {
     static Stream<Arguments> provideValidSignUpRequests() {
         return Stream.of(
                 Arguments.of(
-                        new SignUpRequest("username1", "user1@mail.com", "password123", "password123"),
+                        new SignUpRequest("user1@mail.com", "username1", "password123", "password123"),
                         new JwtAuthenticationResponse("valid-jwt-token-1")
                 ),
                 Arguments.of(
-                        new SignUpRequest("username2", "user2@mail.com", "password456", "password456"),
+                        new SignUpRequest("user2@mail.com", "username2", "password456", "password456"),
                         new JwtAuthenticationResponse("valid-jwt-token-2")
                 )
         );
