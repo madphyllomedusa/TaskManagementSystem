@@ -32,7 +32,3 @@ springdoc:
   api-docs:
     enabled: true
     path: /v3/api-docs
-logging:
-  level:
-    org.springframework.security: DEBUG
-    org.springdoc: DEBUG

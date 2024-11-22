@@ -46,7 +46,6 @@ class AuthControllerTest {
     @ParameterizedTest
     @MethodSource("provideValidSignUpRequests")
     void testRegisterSuccess(SignUpRequest signUpRequest, JwtAuthenticationResponse expectedResponse) throws Exception {
-        // Mock AuthService to return the expected response
         Mockito.when(authService.register(Mockito.any(SignUpRequest.class))).thenReturn(expectedResponse);
 
         mockMvc.perform(post("/auth/register")
@@ -83,9 +82,9 @@ class AuthControllerTest {
 
     static Stream<Arguments> provideInvalidSignUpRequests() {
         return Stream.of(
-                Arguments.of(new SignUpRequest("", "user@mail.com", "password123", "password123")), // Empty username
-                Arguments.of(new SignUpRequest("username", "invalid-email", "password123", "password123")), // Invalid email
-                Arguments.of(new SignUpRequest("username", "user@mail.com", "password123", "wrongpassword")) // Passwords do not match
+                Arguments.of(new SignUpRequest("", "user@mail.com", "password123", "password123")),
+                Arguments.of(new SignUpRequest("username", "invalid-email", "password123", "password123")),
+                Arguments.of(new SignUpRequest("username", "user@mail.com", "password123", "wrongpassword"))
         );
     }
 
@@ -129,8 +128,8 @@ class AuthControllerTest {
 
     static Stream<Arguments> provideInvalidSignInRequests() {
         return Stream.of(
-                Arguments.of(new SignInRequest("user@mail.com", "wrongpassword")), // Incorrect password
-                Arguments.of(new SignInRequest("nonexistentuser@mail.com", "password123")) // Nonexistent user
+                Arguments.of(new SignInRequest("user@mail.com", "wrongpassword")),
+                Arguments.of(new SignInRequest("nonexistentuser@mail.com", "password123"))
         );
     }
 
