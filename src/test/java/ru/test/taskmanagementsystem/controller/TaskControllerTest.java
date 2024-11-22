@@ -189,8 +189,6 @@ class TaskControllerTest {
     }
 
     private void setupAuthentication(String role, String email) {
-        System.out.println("Setting up authentication for: " + email + " with role: " + role);
-
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(email, null, List.of(new SimpleGrantedAuthority(role)))
         );
