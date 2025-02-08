@@ -24,8 +24,8 @@ git --version
 #### Скопируйте репозиторий:
 
 ```
-git clone https://github.com/madphyllomedusa/TaskManagementSystem.git
-cd TaskManagementSystem
+git clone https://github.com/madphyllomedusa/TaskManagementSystem.git](https://github.com/madphyllomedusa/TaskManagement
+cd TaskManagement
 ```
 #### Запустите приложение с помощью Docker Compose:
 
