@@ -61,8 +61,10 @@ http://localhost:8080/swagger-ui/index.html
 #### Так же предусмотрена коллекция в Postman
 
 ```
-https://www.postman.com/joint-operations-architect-36770489/phyllomedusa/collection/37520314-6ed3bb07-935a-433f-90e5-893444df9dfb/?action=share&creator=37520314
+https://www.postman.com/joint-operations-architect-36770489/workspace/phyllomedusa/collection/37520314-cb3adce8-e69c-48d4-8ebf-ffd0309e4e9f?
 ```
+
+Или json файл [Postman json](https://disk.yandex.ru/d/gV81jqBtrz9Qyg)
 
 ### Поддержка
 ### Если у вас возникли вопросы, обратитесь к разработчику:
