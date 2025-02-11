@@ -125,8 +125,7 @@ public class TaskServiceImpl implements TaskService {
 
         task.setStatus(status);
 
-        if(status.equals(Status.COMPLETED)){
-            task.setStatus(Status.COMPLETED);
+        if(task.getStatus().equals(Status.COMPLETED)){
             task.setClosedAt(OffsetDateTime.now());
         }
 
@@ -175,7 +174,7 @@ public class TaskServiceImpl implements TaskService {
                                           Long id,
                                           int page, int size) {
         logger.info("Starting filterTasks with parameters: author {}, assignee {}, priority {}, status {}, id {}, page {}, size {}",
-                author, assignee, priority.name(), status.name(), id, page, size);
+                author, assignee, priority, status, id, page, size);
         Pageable pageable = PageRequest.of(page, size);
         Specification<Task> specification = Specification.where(TaskSpecification.hasAuthor(author))
                 .and(TaskSpecification.hasAssignee(assignee))

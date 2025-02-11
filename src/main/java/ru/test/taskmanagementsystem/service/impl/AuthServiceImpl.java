@@ -32,44 +32,43 @@ public class AuthServiceImpl implements AuthService {
     public JwtAuthenticationResponse login(SignInRequest signInRequest) {
         String email = signInRequest.getEmail();
         String password = signInRequest.getPassword();
-        logger.info("Attempting to login user");
+        logger.info("Attempting to login user with email: {}", email);
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(()-> new NotFoundException("Пользователь не найден"));
+                .orElseThrow(() -> new NotFoundException("Пользователь с email " + email + " не найден"));
 
-        String storedPassword = new String(user.getPassword(), StandardCharsets.UTF_8);
-
-        if (!passwordEncoder.matches(password, storedPassword)) {
-            logger.error("Incorrect password for user {}", email);
-            throw new BadRequestException("Неверный пароль");
+        if (!passwordEncoder.matches(password, new String(user.getPassword(), StandardCharsets.UTF_8))) {
+            logger.error("Incorrect password for user with email: {}", email);
+            throw new BadRequestException("Неверный пароль для пользователя " + email);
         }
 
         String token = jwtService.generateToken(user.getEmail(), user.getRole());
-        logger.info("User successfully logged in");
+        logger.info("User with email {} successfully logged in", email);
         return new JwtAuthenticationResponse(token);
     }
 
     @Override
     public JwtAuthenticationResponse register(SignUpRequest signUpRequest) {
-        logger.info("Attempting to register user");
-        isEmailNotUnique(signUpRequest.getEmail());
-        boolean isPasswordSame = signUpRequest.getPassword().equals(signUpRequest.getConfirmPassword());
+        String email = signUpRequest.getEmail();
+        logger.info("Attempting to register user with email: {}", email);
 
-        if (!isPasswordSame) {
-            logger.error("Passwords do not match");
+        isEmailNotUnique(email);
+
+        if (!signUpRequest.getPassword().equals(signUpRequest.getConfirmPassword())) {
+            logger.error("Passwords do not match for user with email: {}", email);
             throw new BadRequestException("Пароли не совпадают");
         }
 
         String hashedPassword = passwordEncoder.encode(signUpRequest.getPassword());
-        byte[] hashedPasswordBytes = hashedPassword.getBytes(StandardCharsets.UTF_8);
 
         User user = userMapper.fromSignUpRequest(signUpRequest);
-        user.setPassword(hashedPasswordBytes);
+        user.setPassword(hashedPassword.getBytes(StandardCharsets.UTF_8));
         user.setRole(Role.ROLE_USER);
 
         User savedUser = userRepository.save(user);
+
         String token = jwtService.generateToken(savedUser.getEmail(), savedUser.getRole());
-        logger.info("User successfully registered at {}", savedUser.getCreatedAt());
+        logger.info("User with email {} successfully registered", email);
         return new JwtAuthenticationResponse(token);
     }
 

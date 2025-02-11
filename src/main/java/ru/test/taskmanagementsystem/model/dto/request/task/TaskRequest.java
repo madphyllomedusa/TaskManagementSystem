@@ -34,8 +34,8 @@ public class TaskRequest {
      * Статус задачи (PENDING, IN_PROGRESS, COMPLETED).
      */
     @NotBlank(message = "Status cannot be empty")
-    @Pattern(regexp = "PENDING|IN_PROGRESS|COMPLITED",
-            message = "Status must be PENDING, IN_PROGRESS, or COMPLITED")
+    @Pattern(regexp = "PENDING|IN_PROGRESS|COMPLETED",
+            message = "Status must be PENDING, IN_PROGRESS, or COMPLETED")
     private String status;
 
     /**
